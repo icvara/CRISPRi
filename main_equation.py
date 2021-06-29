@@ -30,10 +30,13 @@ y4_data= np.array([ 363403.53, 291546.26, 215998.83, 145227.34,  99504.62,  7062
 
 #params
 class params():
-    B_gfp=389792#541388.61
-    L_gfp=0.10*B_gfp #0.05
+    B_gfp=541388.61
+    L_gfp=0.05*B_gfp #0.05
     K_crispri = 80000
     n_crispri = 2
+
+
+    
     delta_gfp = 1
     
     K_crispra =1
@@ -125,17 +128,30 @@ plt.show()
 '''
 
 GFP=model(x_data,par)
-plt.plot(x_data,GFP)
-plt.plot(x_data,y_data,'-bo')
-plt.plot(x_data,y2_data,'-ro')
-plt.plot(x_data,y3_data,'--ro')
-plt.plot(x_data,y4_data,'-go')
+x=np.copy(x_data)
+x[0]=1e-7
+plt.plot(x,y_data,'-bo', label="sg2")
+#plt.plot(x,y2_data,'-ro',label="sg1")
+#plt.plot(x,y3_data,'--ro',label="sg1t4")
+#plt.plot(x,y4_data,'-go',label="sg4")
+plt.plot(x,GFP,label="model")
 
 
 
+
+plt.title("")
+plt.xlabel("arabinose [%]")
+plt.ylabel("Normalized GFP")
+plt.legend()
 
 plt.xscale('log')
-plt.show()
+labels=x_data
+plt.xticks(x, labels, rotation='vertical')
+
+
+
+#plt.show()
+plt.savefig('model_par_manuel.pdf', bbox_inches='tight')
 
 
 

@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-number="5" 
+number="17" 
 
 #raw_output= np.loadtxt('smc\pars_final.out')
 path = 'smc\pars_' + number + '.out'
@@ -34,16 +34,47 @@ for index, p in df1.iterrows():
 '''
 dtp=df
 
+plt.title("")
+x=np.copy(x_data)
+x[0]=1e-8
+
 for index, p in dtp.iterrows():
     y_model=p['Finf']+(p['F0']-p['Finf'])/(1+np.power(x_data/p['xc'],p['n']))
-    plt.plot(x_data, y_model,'--r')
+    plt.plot(x, y_model,'--r')
 
-plt.plot(x_data,y_data,'-b')
+plt.plot(x, y_model,'--r',label="models")
+
+plt.plot(x,y_data,'-b',label="sg2")
 plt.xscale('log')
-plt.show()
-'''
-sns.pairplot(df1[['Finf','F0','xc','n']])
-plt.show()
-'''
+plt.xlabel("arabinose [%]")
+plt.ylabel("Normalized GFP")
+plt.legend()
+plt.xscale('log')
+labels=x_data
+plt.xticks(x, labels, rotation='vertical')
+#plt.show()
+plt.savefig('model_par_abc_smc.pdf', bbox_inches='tight')
+
+
 sns.pairplot(dtp[['Finf','F0','xc','n']])
+plt.savefig('par_plot.pdf', bbox_inches='tight')
+
+'''
+
+plt.title("")
+plt.xlabel("arabinose [%]")
+plt.ylabel("Normalized GFP")
+plt.legend()
+
+plt.xscale('log')
+labels=x_data
+plt.xticks(x, labels, rotation='vertical')
+
+
+
+#plt.show()
+plt.savefig('model_par_manuel.pdf', bbox_inches='tight')
+
+
 plt.show()
+'''

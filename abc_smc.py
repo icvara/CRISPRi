@@ -32,8 +32,8 @@ def pars_to_dict(pars):
 
 parlist = [ # list containing information of each parameter
     {'name' : 'F0', 'lower_limit':0.1,'upper_limit':10.0},# fluorescence in absence of repressor
-    {'name' : 'Finf','lower_limit':0.1,'upper_limit':10.0},# fluorescence in abundance of repressor
-    {'name' : 'xc','lower_limit':0.1,'upper_limit':100000.0},# characeristic concentration of the repressor
+    {'name' : 'Finf','lower_limit':0.01,'upper_limit':1.0},# fluorescence in abundance of repressor
+    {'name' : 'xc','lower_limit':70000,'upper_limit':100000.0},# characeristic concentration of the repressor
     {'name' : 'n','lower_limit':0.5,'upper_limit':4.0}# Hill exponent
 ]
 
