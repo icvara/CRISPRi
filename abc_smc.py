@@ -6,6 +6,7 @@ from random import choices,seed,random
 from tqdm import tqdm
 from p_tqdm import p_umap # parallel code
 from functools import partial
+import matplotlib.pyplot as plt
 import os
 
 #x_data = np.array([0.1, 1, 2, 10, 100])
@@ -31,10 +32,10 @@ def pars_to_dict(pars):
     return dict_pars
 
 parlist = [ # list containing information of each parameter
-    {'name' : 'F0', 'lower_limit':0.1,'upper_limit':10.0},# fluorescence in absence of repressor
-    {'name' : 'Finf','lower_limit':0.01,'upper_limit':1.0},# fluorescence in abundance of repressor
-    {'name' : 'xc','lower_limit':70000,'upper_limit':100000.0},# characeristic concentration of the repressor
-    {'name' : 'n','lower_limit':0.5,'upper_limit':4.0}# Hill exponent
+    {'name' : 'F0', 'lower_limit':0.5,'upper_limit':1.5},# fluorescence in absence of repressor
+    {'name' : 'Finf','lower_limit':0.0,'upper_limit':0.1},# fluorescence in abundance of repressor
+    {'name' : 'log_xc','lower_limit':-6,'upper_limit':-4},# characeristic concentration of the repressor
+    {'name' : 'n','lower_limit':0.5,'upper_limit':3.5}# Hill exponent
 ]
 
 def sampleprior():
@@ -42,7 +43,7 @@ def sampleprior():
     prior = []
     for ipar,par in enumerate(parlist):
         prior.append(uniform.rvs(loc = par['lower_limit'],
-                                 scale = par['upper_limit']))
+                                 scale = par['upper_limit']-par['lower_limit']))
     return prior
 
 def evaluateprior(pars, model = None):
@@ -52,7 +53,7 @@ def evaluateprior(pars, model = None):
     prior = 1
     for ipar,par in enumerate(parlist):
             prior *= uniform.pdf(pars[ipar],loc = par['lower_limit'],
-                scale = par['upper_limit'])
+                scale = par['upper_limit']-par['lower_limit'])
     return prior
 
 def model(x,pars):
@@ -60,7 +61,7 @@ def model(x,pars):
 ### and a set of concentrations x of signal/inducer, it returns the predicted response
 ### For instance for a repressive hill function:
     p = pars_to_dict(pars)
-    return p['Finf']+(p['F0']-p['Finf'])/(1+np.power(x/p['xc'],p['n'])) 
+    return p['Finf']+(p['F0']-p['Finf'])/(1+np.power(x/10**p['log_xc'],p['n'])) 
 
 def distance(pars): #### 
 ### This function defines the distance between the data and the model for a given set of parameters
@@ -68,6 +69,14 @@ def distance(pars): ####
 ### stored as xdata and ydata:
     return np.sum(np.power(y_data-model(x_data,pars),2))
 
+def plot_pars(pars):
+    pars =[1.009157919809281490e+00, 4.028399867341930785e-02, -4.854782966997141180e+00, 1.855743579580714453e+00]
+    plt.plot(x_data,y_data,'o')
+    plt.xscale('log')
+    x = np.logspace(min(np.log10(x_data+1E-8)),max(np.log10(x_data+1E-8)),200)
+    plt.plot(x,model(x,pars))
+    plt.savefig('result_fit.pdf')
+    plt.show()
 
 def GeneratePar(processcall = 0,  previousparlist = None, previousweights = None,
                 eps_dist = 10000, kernel = None):
@@ -198,7 +207,7 @@ def Sequential_ABC(initial_dist = 10000, final_dist =0.01, Npars = 1000, prior_l
 
     
 
-Sequential_ABC()
+#Sequential_ABC()
 
 
 
