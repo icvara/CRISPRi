@@ -4,15 +4,16 @@ import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import abc_smc
 
-number="17" 
+number="final" 
 
 #raw_output= np.loadtxt('smc\pars_final.out')
 path = 'smc\pars_' + number + '.out'
 raw_output= np.loadtxt(path)
 
-df = pd.DataFrame(raw_output, columns = ['F0','Finf','xc','n'])
-
+#df = pd.DataFrame(raw_output, columns = ['F0','Finf','xc','n'])
+df = pd.DataFrame(raw_output, columns = ['Finf','xc','n','L1','B1','log_k1','n1'])
 
 #distance= np.loadtxt('smc\distances_final.out')
 #distance= np.loadtxt('smc\distances_17.out')
@@ -39,12 +40,12 @@ x=np.copy(x_data)
 x[0]=1e-8
 
 for index, p in dtp.iterrows():
-    y_model=p['Finf']+(p['F0']-p['Finf'])/(1+np.power(x_data/p['xc'],p['n']))
+    y_model=abc_smc.model(x,p)
     plt.plot(x, y_model,'--r')
 
-plt.plot(x, y_model,'--r',label="models")
+plt.plot(x, y_model,'-r',label="models")
 
-plt.plot(x,y_data,'-b',label="sg2")
+plt.plot(x,y_data,'-bo',label="sg2")
 plt.xscale('log')
 plt.xlabel("arabinose [%]")
 plt.ylabel("Normalized GFP")
@@ -56,7 +57,7 @@ plt.xticks(x, labels, rotation='vertical')
 plt.savefig('model_par_abc_smc.pdf', bbox_inches='tight')
 
 
-sns.pairplot(dtp[['Finf','F0','xc','n']])
+sns.pairplot(dtp)
 plt.savefig('par_plot.pdf', bbox_inches='tight')
 
 '''

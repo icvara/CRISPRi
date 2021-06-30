@@ -9,7 +9,7 @@ x_data=np.array([0, 3.125e-06, 6.250e-06, 1.250e-05, 2.500e-05, 5.000e-05,
                  1.000e-04, 2.000e-04, 2.000e-01])
 y_data = np.array([ 541388.61, 499462.04, 450763.51, 295709.72,
                    141880.68,  69208.92, 39025.37,  29463.05,  12465.16])
-#y_data = y_data/np.max(y_data) #fix the max to 1
+y_data = y_data/np.max(y_data) #fix the max to 1
 
 #sg1 data time 100 from javier
 
@@ -30,11 +30,15 @@ y4_data= np.array([ 363403.53, 291546.26, 215998.83, 145227.34,  99504.62,  7062
 
 #params
 class params():
-    B_gfp=541388.61
-    L_gfp=0.05*B_gfp #0.05
-    K_crispri = 80000
-    n_crispri = 2
+    B_gfp=1#1.009157919809281490e+00
+    L_gfp=0#4.028399867341930785e-02
+    K_crispri =-1# -4.854782966997141180e+00
+    n_crispri =2# 1.855743579580714453e+00
 
+    n_X=2
+    K_X=-4.0
+    B_X=1.0
+    L_X=0.1
 
     
     delta_gfp = 1
@@ -44,8 +48,6 @@ class params():
 
 
 #chem
-ARA=np.array([0,3.387017561686057e-06,1.0161052685058171e-05,3.0483158055174515e-05,9.144947416552355e-05,0.00027434842249657066,
-             0.0008230452674897119,0.0024691358024691358,0.007407407407407408,0.022222222222222223,0.06666666666666667,0.2])
 
 ARA=np.array([0.2,	0.0002,	0.0001,	0.00005,	0.000025,	0.0000125,	0.00000625,
               0.000003125,	0])
@@ -65,8 +67,10 @@ par=params()
 #equation
 
 def model(ARA,par):
-    GFP = (par.B_gfp -par.L_gfp) / (1+(par.K_crispri*ARA)**par.n_crispri) +par.L_gfp
-    return GFP
+    X= par.L_X + (np.power((par.B_X-par.L_X)*ARA,par.n_X))/(np.power(10**par.K_X,par.n_X)+np.power(ARA,par.n_X))
+    GFP= par.L_gfp + (par.B_gfp -par.L_gfp) / (1+(X/10**par.K_crispri)**par.n_crispri)
+    #GFP = par.L_gfp + (par.B_gfp -par.L_gfp) / (1+(ARA/10**par.K_crispri)**par.n_crispri) 
+    return X,GFP
 
 
 def Flow_crispri(par,GFP,ARA):
@@ -127,14 +131,16 @@ plt.show()
 
 '''
 
-GFP=model(x_data,par)
+X,GFP=model(x_data,par)
 x=np.copy(x_data)
 x[0]=1e-7
-plt.plot(x,y_data,'-bo', label="sg2")
+#plt.plot(x,y_data,'-bo', label="sg2")
 #plt.plot(x,y2_data,'-ro',label="sg1")
 #plt.plot(x,y3_data,'--ro',label="sg1t4")
 #plt.plot(x,y4_data,'-go',label="sg4")
-plt.plot(x,GFP,label="model")
+plt.plot(x,GFP,'-go',label="GFP")
+plt.plot(x,X,'-ro',label="X")
+
 
 
 
@@ -150,8 +156,8 @@ plt.xticks(x, labels, rotation='vertical')
 
 
 
-#plt.show()
-plt.savefig('model_par_manuel.pdf', bbox_inches='tight')
+plt.show()
+#plt.savefig('model_par_manuel.pdf', bbox_inches='tight')
 
 
 

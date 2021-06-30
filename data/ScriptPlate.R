@@ -312,12 +312,20 @@ scale_x_log10() + facet_grid(sample~.)
 
 
 
-View(d2)
-d2$mean_GFP
-
-x<-subset(d2,sample=="sg2")
 
 
+-------------------------------
+
+d2<-subset(meanD, sample != "blank" & sample!= "empty" & sample !="NA" & time==100)
+d2$arabinose[d2$arabinose==-1] ="off-target"
+
+d3<-data.frame(d2$sample,d2$arabinose,d2$mean_GFP)
+names(d3)<-c("sample","arabinose","GFP")
 
 
+d3$GFP<-d3$GFP/max(d3$GFP)
+ggplot(d3,aes(y=GFP,x=as.factor(arabinose), col=as.factor(sample)))+geom_point() +
+facet_grid(sample~.)
+
+write.table(d3,paste(path,"data.txt",sep="\\"),quote=FALSE,col.names=TRUE,sep="\t")
 

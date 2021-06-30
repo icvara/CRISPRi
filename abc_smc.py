@@ -8,15 +8,33 @@ from p_tqdm import p_umap # parallel code
 from functools import partial
 import matplotlib.pyplot as plt
 import os
+import pandas as pd
 
-#x_data = np.array([0.1, 1, 2, 10, 100])
-#y_data = np.array([2, 1, 0.9, 0.8, 0.7])
+#data input by hand
+''' 
 #sg2 data time 100 from javier
-x_data=np.array([0, 3.125e-06, 6.250e-06, 1.250e-05, 2.500e-05, 5.000e-05,
-                 1.000e-04, 2.000e-04, 2.000e-01])
-y_data = np.array([ 541388.61, 499462.04, 450763.51, 295709.72,
-                   141880.68,  69208.92, 39025.37,  29463.05,  12465.16])
-y_data = y_data/np.max(y_data) #fix the max to 1
+x_data=np.array([0, 3.125e-06, 6.250e-06, 1.250e-05, 2.500e-05, 5.000e-05, 1.000e-04, 2.000e-04, 2.000e-01])
+y_data = np.array([ 541388.61, 499462.04, 450763.51, 295709.72, 141880.68,  69208.92, 39025.37,  29463.05,  12465.16])
+y_data_max= 537009.92 #from control without sgRNA
+y_data = y_data/y_data_max #fix the max to 1
+'''
+
+#load data input from file
+path='data\data.txt'
+df = pd.read_csv(path,sep='\t')
+df['arabinose']=df['arabinose'].astype(str)
+
+for s in df['sample'].unique():
+    print(s)
+
+s='sg2'    
+sub_df=df[df['sample']==s]
+max_input=sub_df['GFP'][df['arabinose']=='off-target']
+x_data = np.array(sub_df['arabinose'][1:len(sub_df['arabinose'])].astype(float).tolist())
+y_data = np.array(sub_df['GFP'][1:len(sub_df['GFP'])].tolist())
+
+
+
 
 if os.path.isdir('smc') is False: ## if 'smc' folder does not exist:
     os.mkdir('smc') ## create it, the output will go there
@@ -32,10 +50,16 @@ def pars_to_dict(pars):
     return dict_pars
 
 parlist = [ # list containing information of each parameter
-    {'name' : 'F0', 'lower_limit':0.5,'upper_limit':1.5},# fluorescence in absence of repressor
-    {'name' : 'Finf','lower_limit':0.0,'upper_limit':0.1},# fluorescence in abundance of repressor
-    {'name' : 'log_xc','lower_limit':-6,'upper_limit':-4},# characeristic concentration of the repressor
-    {'name' : 'n','lower_limit':0.5,'upper_limit':3.5}# Hill exponent
+   # {'name' : 'F0', 'lower_limit':0.5,'upper_limit':1.5},# fluorescence in absence of repressor
+    {'name' : 'Finf','lower_limit':0.0,'upper_limit':0.3},# fluorescence in abundance of repressor
+    {'name' : 'log_xc','lower_limit':-1.5,'upper_limit':0},# characeristic concentration of the repressor
+    {'name' : 'n','lower_limit':1.0,'upper_limit':3.5},# Hill exponent
+
+    #first node which is activate by ara(x) and repress the GFP
+    {'name' : 'L1', 'lower_limit':0.0,'upper_limit':0.1},# fluorescence in abundance of inducer
+    {'name' : 'B1','lower_limit':0.5,'upper_limit':1.5},# fluorescence in absence of inducer
+    {'name' : 'log_k1','lower_limit':-5,'upper_limit':-3.5},# characeristic concentration of the activation
+    {'name' : 'n1','lower_limit':1.0,'upper_limit':3.5}# Hill exponent
 ]
 
 def sampleprior():
@@ -61,7 +85,10 @@ def model(x,pars):
 ### and a set of concentrations x of signal/inducer, it returns the predicted response
 ### For instance for a repressive hill function:
     p = pars_to_dict(pars)
-    return p['Finf']+(p['F0']-p['Finf'])/(1+np.power(x/10**p['log_xc'],p['n'])) 
+    max_expression_n2=1
+    node1 = p['L1'] + np.power((p['B1']-p['L1'])*x,p['n1'])/(np.power(10**p['log_k1'],p['n1'])+np.power(x,p['n1']))
+    #return p['Finf']+(p['F0']-p['Finf'])/(1+np.power(node1/10**p['log_xc'],p['n']))
+    return p['Finf']+(max_expression_n2-p['Finf'])/(1+np.power(node1/10**p['log_xc'],p['n'])) 
 
 def distance(pars): #### 
 ### This function defines the distance between the data and the model for a given set of parameters
