@@ -109,7 +109,6 @@ def model(x,pars):
 ### and a set of concentrations x of signal/inducer, it returns the predicted response
 ### For instance for a repressive hill function:
     p = pars_to_dict(pars)
-    max_input=1
     node1 = p['L1'] + np.power((p['B1']-p['L1'])*x,p['n1'])/(np.power(10**p['log_k1'],p['n1'])+np.power(x,p['n1']))
     #return p['Finf']+(p['F0']-p['Finf'])/(1+np.power(node1/10**p['log_xc'],p['n']))
     return p['Finf']+(max_input-p['Finf'])/(1+np.power(node1/10**p['log_xc'],p['n'])) 
