@@ -22,19 +22,23 @@ y_data = y_data/y_data_max #fix the max to 1
 
 x_data=np.array([])
 y_data=np.array([])
+max_input=1
 sample=""
 
 
     
 def Start(s):
     global sample
+    global x_data 
+    global y_data
+    global max_input
+    
     sample=s
     if os.path.isdir('smc_'+sample) is False: ## if 'smc' folder does not exist:
         os.mkdir('smc_'+sample) ## create it, the output will go there
-    global x_data 
-    global y_data
 
-    x_data, y_data = Get_data(dataframe,s) 
+
+    x_data, y_data, max_input = Get_data(dataframe,s) 
     Sequential_ABC()
 
 
@@ -53,10 +57,10 @@ for s in dataframe['sample'].unique():
 
 def Get_data(df,s):
     sub_df=df[df['sample']==s]
-    max_input=sub_df['GFP'][df['arabinose']=='off-target']
+    max_input= sub_df['GFP'][df['arabinose']=='off-target'].tolist()
     x_data = np.array(sub_df['arabinose'][1:len(sub_df['arabinose'])].astype(float).tolist())
     y_data = np.array(sub_df['GFP'][1:len(sub_df['GFP'])].tolist())
-    return x_data,y_data
+    return x_data,y_data, max_input
  
 
 def pars_to_dict(pars):
@@ -105,10 +109,10 @@ def model(x,pars):
 ### and a set of concentrations x of signal/inducer, it returns the predicted response
 ### For instance for a repressive hill function:
     p = pars_to_dict(pars)
-    max_expression_n2=1
+    max_input=1
     node1 = p['L1'] + np.power((p['B1']-p['L1'])*x,p['n1'])/(np.power(10**p['log_k1'],p['n1'])+np.power(x,p['n1']))
     #return p['Finf']+(p['F0']-p['Finf'])/(1+np.power(node1/10**p['log_xc'],p['n']))
-    return p['Finf']+(max_expression_n2-p['Finf'])/(1+np.power(node1/10**p['log_xc'],p['n'])) 
+    return p['Finf']+(max_input-p['Finf'])/(1+np.power(node1/10**p['log_xc'],p['n'])) 
 
 def distance(pars): #### 
 ### This function defines the distance between the data and the model for a given set of parameters
