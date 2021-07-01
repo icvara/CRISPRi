@@ -19,25 +19,45 @@ y_data_max= 537009.92 #from control without sgRNA
 y_data = y_data/y_data_max #fix the max to 1
 '''
 
-#load data input from file
-path='data\data.txt'
-df = pd.read_csv(path,sep='\t')
-df['arabinose']=df['arabinose'].astype(str)
 
-for s in df['sample'].unique():
+x_data=np.array([])
+y_data=np.array([])
+sample=""
+
+
+    
+def Start(s):
+    global sample
+    sample=s
+    if os.path.isdir('smc_'+sample) is False: ## if 'smc' folder does not exist:
+        os.mkdir('smc_'+sample) ## create it, the output will go there
+    global x_data 
+    global y_data
+
+    x_data, y_data = Get_data(dataframe,s) 
+    Sequential_ABC()
+
+
+
+
+
+#load data input from file
+#path='/users/ibarbier/data/data.txt'
+path='data/data.txt'
+
+dataframe = pd.read_csv(path,sep='\t')
+dataframe['arabinose']=dataframe['arabinose'].astype(str)
+
+for s in dataframe['sample'].unique():
     print(s)
 
-s='sg2'    
-sub_df=df[df['sample']==s]
-max_input=sub_df['GFP'][df['arabinose']=='off-target']
-x_data = np.array(sub_df['arabinose'][1:len(sub_df['arabinose'])].astype(float).tolist())
-y_data = np.array(sub_df['GFP'][1:len(sub_df['GFP'])].tolist())
-
-
-
-
-if os.path.isdir('smc') is False: ## if 'smc' folder does not exist:
-    os.mkdir('smc') ## create it, the output will go there
+def Get_data(df,s):
+    sub_df=df[df['sample']==s]
+    max_input=sub_df['GFP'][df['arabinose']=='off-target']
+    x_data = np.array(sub_df['arabinose'][1:len(sub_df['arabinose'])].astype(float).tolist())
+    y_data = np.array(sub_df['GFP'][1:len(sub_df['GFP'])].tolist())
+    return x_data,y_data
+ 
 
 def pars_to_dict(pars):
 ### This function is not necessary, but it makes the code a bit easier to read,
@@ -196,9 +216,9 @@ def Sequential_ABC(initial_dist = 10000, final_dist =0.01, Npars = 1000, prior_l
         weights = None
         idistance = 0
     else: # a file with the label is used to load the posterior, use always numerical (not 'final')
-        pars = np.loadtxt('smc/pars_{}_{}_{}_{}.out'.format(model,sto,gamma,prior_label))
-        weights = np.loadtxt('smc/weights_{}_{}_{}_{}.out'.format(model,sto,gamma,prior_label))
-        accepted_distances = np.loadtxt('smc/distances_{}_{}_{}_{}.out'.format(model,sto,gamma,prior_label))
+        pars = np.loadtxt('smc_'+sample+'/pars_{}_{}_{}_{}.out'.format(model,sto,gamma,prior_label))
+        weights = np.loadtxt('smc_'+sample+'/weights_{}_{}_{}_{}.out'.format(model,sto,gamma,prior_label))
+        accepted_distances = np.loadtxt('smc_'+sample+'/distances_{}_{}_{}_{}.out'.format(model,sto,gamma,prior_label))
         distance = np.median(accepted_distances)
         idistance = prior_label
 
@@ -220,9 +240,9 @@ def Sequential_ABC(initial_dist = 10000, final_dist =0.01, Npars = 1000, prior_l
             last_round = True
         else:
             distance = proposed_dist
-        np.savetxt('smc/pars_{}.out'.format(label), pars)
-        np.savetxt('smc/weights_{}.out'.format(label), weights)
-        np.savetxt('smc/distances_{}.out'.format(label), accepted_distances)
+        np.savetxt('smc_'+sample+'/pars_{}.out'.format(label), pars)
+        np.savetxt('smc_'+sample+'/weights_{}.out'.format(label), weights)
+        np.savetxt('smc_'+sample+'/distances_{}.out'.format(label), accepted_distances)
 
         if acceptance < 0.1 and kernelfactor>0.1 and adaptative_kernel:
             kernelfactor = kernelfactor * 0.7
@@ -232,10 +252,7 @@ def Sequential_ABC(initial_dist = 10000, final_dist =0.01, Npars = 1000, prior_l
             print('Increasing kernel width to : ',kernelfactor)
 
 
-    
-
-#Sequential_ABC()
 
 
-
+#Start("sg1")
 

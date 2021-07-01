@@ -6,10 +6,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import abc_smc
 
+sample="sg1"
 number="final" 
 
 #raw_output= np.loadtxt('smc\pars_final.out')
-path = 'smc\pars_' + number + '.out'
+path = 'smc_'+sample+'\pars_' + number + '.out'
 raw_output= np.loadtxt(path)
 
 #df = pd.DataFrame(raw_output, columns = ['F0','Finf','xc','n'])
@@ -41,7 +42,7 @@ x[0]=1e-8
 
 for index, p in dtp.iterrows():
     y_model=abc_smc.model(x,p)
-    plt.plot(x, y_model,'--r')
+    plt.plot(x, y_model,'-r')
 
 plt.plot(x, y_model,'-r',label="models")
 
@@ -54,11 +55,11 @@ plt.xscale('log')
 labels=x_data
 plt.xticks(x, labels, rotation='vertical')
 #plt.show()
-plt.savefig('model_par_abc_smc.pdf', bbox_inches='tight')
+plt.savefig(sample+'model_par_abc_smc.pdf', bbox_inches='tight')
 
 
 sns.pairplot(dtp)
-plt.savefig('par_plot.pdf', bbox_inches='tight')
+plt.savefig(sample+'par_plot.pdf', bbox_inches='tight')
 
 '''
 
