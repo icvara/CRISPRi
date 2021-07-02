@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --time 00-00:15:00
-#SBATCH --node 1
-#SBATCH --ntask 1
+#SBATCH --nodes 1
+#SBATCH --ntasks 1
 #SBATCH --cpus-per-task 12
 #SBATCH --array 1-8
 

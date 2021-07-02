@@ -2,14 +2,16 @@ import numpy as np
 from scipy.stats import norm, uniform, multivariate_normal
 from scipy.optimize import minimize
 import sys,ast
-from random import choices,seed,random
+from random import choices, seed, random
 from tqdm import tqdm
-from p_tqdm import p_umap # parallel code
+from p_tqdm import p_umap, p_map # parallel code
 from functools import partial
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
-
+import multiprocessing
+import time
+   
 #data input by hand
 ''' 
 #sg2 data time 100 from javier
@@ -18,42 +20,6 @@ y_data = np.array([ 541388.61, 499462.04, 450763.51, 295709.72, 141880.68,  6920
 y_data_max= 537009.92 #from control without sgRNA
 y_data = y_data/y_data_max #fix the max to 1
 '''
-
-
-x_data=np.array([])
-y_data=np.array([])
-max_input=1
-sample=""
-
-
-    
-def Start(s):
-    global sample
-    global x_data 
-    global y_data
-    global max_input
-    
-    sample=s
-    if os.path.isdir('smc_'+sample) is False: ## if 'smc' folder does not exist:
-        os.mkdir('smc_'+sample) ## create it, the output will go there
-
-
-    x_data, y_data, max_input = Get_data(dataframe,s) 
-    Sequential_ABC()
-
-
-
-
-
-#load data input from file
-#path='/users/ibarbier/data/data.txt'
-path='data/data.txt'
-
-dataframe = pd.read_csv(path,sep='\t')
-dataframe['arabinose']=dataframe['arabinose'].astype(str)
-
-for s in dataframe['sample'].unique():
-    print(s)
 
 def Get_data(df,s):
     sub_df=df[df['sample']==s]
@@ -92,6 +58,8 @@ def sampleprior():
     for ipar,par in enumerate(parlist):
         prior.append(uniform.rvs(loc = par['lower_limit'],
                                  scale = par['upper_limit']-par['lower_limit']))
+        #print("prior[-1]", prior[-1])
+    #print("prior = ", prior)
     return prior
 
 def evaluateprior(pars, model = None):
@@ -104,7 +72,7 @@ def evaluateprior(pars, model = None):
                 scale = par['upper_limit']-par['lower_limit'])
     return prior
 
-def model(x,pars):
+def model(x, max_input, pars):
 ### This is the function you are trying to fit, so given a set of parameters (pars)
 ### and a set of concentrations x of signal/inducer, it returns the predicted response
 ### For instance for a repressive hill function:
@@ -113,11 +81,11 @@ def model(x,pars):
     #return p['Finf']+(p['F0']-p['Finf'])/(1+np.power(node1/10**p['log_xc'],p['n']))
     return p['Finf']+(max_input-p['Finf'])/(1+np.power(node1/10**p['log_xc'],p['n'])) 
 
-def distance(pars): #### 
+def distance(pars, x_data, y_data, max_input): #### 
 ### This function defines the distance between the data and the model for a given set of parameters
 ### for instance it can be a least squares minimization e.g. for a set of experimental observations
 ### stored as xdata and ydata:
-    return np.sum(np.power(y_data-model(x_data,pars),2))
+    return np.sum(np.power(y_data-model(x_data, max_input, pars),2))
 
 def plot_pars(pars):
     pars =[1.009157919809281490e+00, 4.028399867341930785e-02, -4.854782966997141180e+00, 1.855743579580714453e+00]
@@ -127,18 +95,28 @@ def plot_pars(pars):
     plt.plot(x,model(x,pars))
     plt.savefig('result_fit.pdf')
     plt.show()
-
-def GeneratePar(processcall = 0,  previousparlist = None, previousweights = None,
+    
+def GeneratePar(x_data, y_data, max_input, iter,
+                processcall = 0,  previousparlist = None, previousweights = None,
                 eps_dist = 10000, kernel = None):
-# This function generates a valid parameter given a set of sampled pars previousparlist,previousweights
-# that is under a threshold eps_dist
+    
+        #print("iter = ", iter)
+    
+        # This function generates a valid parameter given a set of sampled pars previousparlist,previousweights
+        # that is under a threshold eps_dist
+    
+        # processcall is a dummy variable that can be useful when tracking the function performance
+        # it also allows the use of p_tqdm mapping that forces the use of an iterator 
+    
+        # get current process
+        # print(multiprocessing.current_process())
 
-# processcall is a dummy variable that can be useful when tracking the function performance
-# it also allows the use of p_tqdm mapping that forces the use of an iterator 
-
+        #@EO: to compare the two versions, set the seeds
+        #seed(iter) # setting random seeds for each thread/process to avoid having the same random sequence in each thread
+        #np.random.seed(iter)
         seed() # setting random seeds for each thread/process to avoid having the same random sequence in each thread
         np.random.seed()
-
+        
         evaluated_distances = []
         d = eps_dist + 1 # original distance is beyond eps_dist
         while d > eps_dist: # until a suitable parameter is found
@@ -146,11 +124,12 @@ def GeneratePar(processcall = 0,  previousparlist = None, previousweights = None
                 proposed_pars = sampleprior()
             else:
                 selected_pars = choices(previousparlist, weights = previousweights)[0] # select a point from the previous sample
+                #print("sel: ", selected_pars)
                 proposed_pars = selected_pars + kernel.rvs() # and perturb it
+                #print("pro: ", proposed_pars)
 
             if (evaluateprior(proposed_pars,model) > 0):
-
-                d = distance(proposed_pars) 
+                d = distance(proposed_pars, x_data, y_data, max_input)
                 evaluated_distances.append(d)
 
         # Calculate weight
@@ -165,9 +144,14 @@ def GeneratePar(processcall = 0,  previousparlist = None, previousweights = None
             weight = evaluateprior(proposed_pars)/sum_denom
         return proposed_pars, d, weight, evaluated_distances
 
-def GeneratePars(previousparlist = None, previousweights = None, eps_dist = 10000,
-    Npars = 1000, kernelfactor = 1.0):
-## Call to function GeneratePar in parallel until Npars points are accepted
+    
+def GeneratePars(x_data, y_data, max_input, ncpus,
+                 previousparlist = None, previousweights = None, eps_dist = 10000,
+                 Npars = 1000, kernelfactor = 1.0):
+    #@EO: to compare the 2 versions, set the seed
+    #np.random.seed(0)
+
+    ## Call to function GeneratePar in parallel until Npars points are accepted
 
     if previousparlist is not None:
         previouscovar = 2.0*kernelfactor*np.cov(np.array(previousparlist).T)
@@ -183,9 +167,28 @@ def GeneratePars(previousparlist = None, previousweights = None, eps_dist = 1000
     #   GenerateParstePar(0,model = 'Berg',gamma = gamma, previousparlist = previousparlist,
     #   previousweights = previousweights, eps_dist = eps_dist, kernel = kernel)
 
-    results = p_umap(
-        partial(GeneratePar, previousparlist = previousparlist,
-        previousweights = previousweights, eps_dist = eps_dist, kernel = kernel), range(Npars))
+    start_time = time.time()
+    results = []
+    if 1 == 0:
+        #@EO: to compare with new implementation use p_map() instead of p_umap()
+        #results = p_map(
+        results = p_umap(
+        partial(GeneratePar, x_data, y_data, max_input, previousparlist = previousparlist,
+                previousweights = previousweights, eps_dist = eps_dist, kernel = kernel),
+            range(Npars), num_cpus=ncpus)
+    else:
+        pool = multiprocessing.Pool(ncpus)
+        #@EO: consider imap or shuffle results
+        #@EO: to compare to orginal pool.map with chunksize=1
+        results = pool.map(func=partial(GeneratePar, x_data, y_data, max_input, previousparlist = previousparlist,
+                                        previousweights = previousweights, eps_dist = eps_dist, kernel = kernel),
+                           iterable=range(Npars), chunksize=10)
+        pool.close()
+        pool.join()    
+    end_time = time.time()
+    print(f'>>>> Loop processing time: {end_time-start_time:.3f} sec on {ncpus} CPU cores.')
+
+    
     accepted_distances = [result[1] for result in results]
     evaluated_distances = [res for result in results for res in result[3]] # flatten list 
     newparlist = [result[0] for result in results]
@@ -200,7 +203,8 @@ def GeneratePars(previousparlist = None, previousweights = None, eps_dist = 1000
     return(newparlist,newweights, accepted_distances, Npars/len(evaluated_distances) )
 
 #final_dist =100
-def Sequential_ABC(initial_dist = 10000, final_dist =0.01, Npars = 1000, prior_label = None,
+def Sequential_ABC(x_data, y_data, max_input, sample, ncpus,
+                   initial_dist = 10000, final_dist =0.01, Npars = 1000, prior_label = None,
                    adaptative_kernel = True):
 
 ## Sequence of acceptance threshold start with initial_dis and keeps on reducing until
@@ -228,10 +232,17 @@ def Sequential_ABC(initial_dist = 10000, final_dist =0.01, Npars = 1000, prior_l
     while not_converged:
 
         idistance += 1
+
+        #@EO: for testing, limit the number of iterations
+        #if idistance == 3:
+        #    last_round = True
+
+        
         print("SMC step with target distance: {}".format(distance))
-        pars,weights,accepted_distances,acceptance = GeneratePars( previousparlist = pars,
-            previousweights = weights, eps_dist = distance,
-            Npars = Npars, kernelfactor = kernelfactor)
+        pars,weights,accepted_distances,acceptance = GeneratePars(x_data, y_data, max_input, ncpus,
+                                                                  previousparlist = pars,
+                                                                  previousweights = weights, eps_dist = distance,
+                                                                  Npars = Npars, kernelfactor = kernelfactor)
         proposed_dist = np.median(accepted_distances)
         if last_round is True:
             not_converged = False
@@ -255,7 +266,33 @@ def Sequential_ABC(initial_dist = 10000, final_dist =0.01, Npars = 1000, prior_l
             print('Increasing kernel width to : ',kernelfactor)
 
 
+def main(argv):
 
+    if len(sys.argv) < 3:
+        print("""
+Two arguments are expected:
+1. a block name, e.g.: sg1
+2. the number of CPU cores to use, e.g. 4
+Usage:""", __file__ ,"""sg1 12""")
+        sys.exit(1)
+    
+    sample = sys.argv[1]
+    ncpus  = int(sys.argv[2])
+    print("Passed options: sample = ", sample, " and ncpus = ", ncpus)
 
-#Start("sg1")
+    if os.path.isdir('smc_'+sample) is False: ## if 'smc' folder does not exist:
+        os.mkdir('smc_'+sample) ## create it, the output will go there
 
+    x_data = np.array([])
+    y_data = np.array([])
+    max_input=1
+
+    path='data/data.txt'
+    dataframe = pd.read_csv(path,sep='\t')
+    dataframe['arabinose']=dataframe['arabinose'].astype(str)
+
+    x_data, y_data, max_input = Get_data(dataframe, sample) 
+    Sequential_ABC(x_data, y_data, max_input, sample, ncpus)
+
+if __name__ == "__main__":
+   main(sys.argv[1:])
