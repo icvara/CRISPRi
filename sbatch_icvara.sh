@@ -3,7 +3,7 @@
 #SBATCH --time 00-00:15:00
 #SBATCH --nodes 1
 #SBATCH --ntasks 1
-#SBATCH --cpus-per-task 12
+#SBATCH --cpus-per-task 20
 #SBATCH --array 1-8
 
 
