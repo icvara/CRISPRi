@@ -18,7 +18,7 @@ import time
 version="ALL_together_1"
 pl= None #prior_label=
 sys.path.insert(0, '/users/ibarbier/CRISPRi/'+version+'/')
-#sys.path.insert(0, 'C:/Users/Administrator/Desktop/Modeling/AC-DC/smc_'+filename)
+sys.path.insert(0, 'C:/Users/Administrator/Desktop/Modeling/CRISPRi/'+version)
 import model_equation
 
 parlist=model_equation.parlist
@@ -259,5 +259,9 @@ def main(argv):
         
   Sequential_ABC(x_data,y_data,max_input, ncpus=40,initial_dist = initdist, final_dist =finaldist,prior_label = pl,Npars=1000)
 
-if __name__ == "__main__":
+if __name__ == "__main__":q
    main(sys.argv[1:])
+ # p=sampleprior()
+
+  #d=model_equation.distance(pars_to_dict(p), x_data, y_data, max_input)
+
