@@ -23,7 +23,7 @@ y_data = y_data/y_data_max #fix the max to 1
 
 def Get_data(df,s):
     sub_df=df[df['sample']==s]
-    max_input= sub_df['GFP'][df['arabinose']=='off-target'].tolist()
+    max_input= sub_df['GFP'][df['arabinose']=='off-target'].tolist()[0]
     x_data = np.array(sub_df['arabinose'][1:len(sub_df['arabinose'])].astype(float).tolist())
     y_data = np.array(sub_df['GFP'][1:len(sub_df['GFP'])].tolist())
     return x_data,y_data, max_input
@@ -72,10 +72,10 @@ def evaluateprior(pars, model = None):
                 scale = par['upper_limit']-par['lower_limit'])
     return prior
 
-def model(x, max_input, pars):
+def model(x, max_input, pars, listTodict=False):
 ### This is the function you are trying to fit, so given a set of parameters (pars)
 ### and a set of concentrations x of signal/inducer, it returns the predicted response
-### For instance for a repressive hill function:
+### For instance for a repressive hill function:  
     p = pars_to_dict(pars)
     node1 = p['L1'] + np.power((p['B1']-p['L1'])*x,p['n1'])/(np.power(10**p['log_k1'],p['n1'])+np.power(x,p['n1']))
     #return p['Finf']+(p['F0']-p['Finf'])/(1+np.power(node1/10**p['log_xc'],p['n']))
