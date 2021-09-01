@@ -259,8 +259,8 @@ def main(argv):
         
   Sequential_ABC(x_data,y_data,max_input, ncpus=40,initial_dist = initdist, final_dist =finaldist,prior_label = pl,Npars=1000)
 
-if __name__ == "__main__":q
-   main(sys.argv[1:])
+if __name__ == "__main__":
+    main(sys.argv[1:])
  # p=sampleprior()
 
   #d=model_equation.distance(pars_to_dict(p), x_data, y_data, max_input)
