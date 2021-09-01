@@ -98,7 +98,7 @@ path='data/input.txt'
 
 sample = ['sg1','sg1t4','sg2' ,'sg3' ,'sg4' ,'sg4t4','sg5','sg6']
 path='data/data.txt'
-path='C:/Users/Administrator/Desktop/Modeling/CRISPRi/data/data.txt'
+#path='C:/Users/Administrator/Desktop/Modeling/CRISPRi/data/data.txt'
 dataframe = pd.read_csv(path,sep='\t')
 dataframe['arabinose']=dataframe['arabinose'].astype(str)
   
