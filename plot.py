@@ -16,17 +16,20 @@ from functools import partial
 
 
 filename="ALL_together_1"
-n=['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29',
-    '30','31','32','33','34','35','36','37']
-n=['1','10','20','30','37']
-#n=['final']
+n=['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29']#,
+#n=['17','18','19','20','21','22','23','24']#,'25','26','27','28','29']
+  #  '30','31','32','33','34','35','36','37']
+#n=['1','10','20','30','37']
+n=['59']
 #
-#sys.path.insert(0, '/users/ibarbier/AC-DC/'+filename)
-sys.path.insert(0, 'C:/Users/Administrator/Desktop/Modeling/CRISPRi/'+filename)
+sys.path.insert(0, '/users/ibarbier/CRISPRi/'+filename)
+#sys.path.insert(0, 'C:/Users/Administrator/Desktop/Modeling/CRISPRi/'+filename)
 import model_equation as meq
   
 parlist=meq.parlist
-
+namelist=[]
+for i,par in enumerate(parlist):
+    namelist.append(parlist[i]['name'])
 
 ######################################################################33
 #########################################################################
@@ -95,7 +98,45 @@ def plot_alltime(n,filename,parlist):
     plt.close()
 
 
+def par_plot(df,name,nb,parlist,namelist):
+    #plt.plot(df['K_ARAX'],df['K_ARAY'],'ro')
+    fonts=2
+ 
+    for i,par1 in enumerate(namelist):
+        for j,par2 in enumerate(namelist):
+            plt.subplot(len(namelist),len(namelist), i+j*len(namelist)+1)
+            if i == j :
+                plt.hist(df[par1])
+                plt.xlim((parlist[i]['lower_limit'],parlist[i]['upper_limit']))
+            else:
+                plt.scatter(df[par1],df[par2], c=df['dist'], s=0.001, cmap='viridis')# vmin=mindist, vmax=maxdist)
+                plt.xlim((parlist[i]['lower_limit'],parlist[i]['upper_limit']))
+                plt.ylim((parlist[j]['lower_limit'],parlist[j]['upper_limit']))
+            if i > 0 and j < len(namelist)-1 :
+                plt.xticks([])
+                plt.yticks([])
+            else:
+                if i==0 and j!=len(namelist)-1:
+                    plt.xticks([])
+                    plt.ylabel(par2,fontsize=fonts)
+                    plt.yticks(fontsize=fonts,rotation=90)
+                if j==len(namelist)-1 and i != 0:
+                    plt.yticks([])
+                    plt.xlabel(par1,fontsize=fonts)
+                    plt.xticks(fontsize=fonts)
+                else:
+                    plt.ylabel(par2,fontsize=fonts)
+                    plt.xlabel(par1,fontsize=fonts)
+                    plt.xticks(fontsize=fonts)
+                    plt.yticks(fontsize=4,rotation=90)                 
+    plt.savefig(name+"/plot/"+nb+'_par_plot.pdf', bbox_inches='tight')
+    plt.close()
+    #plt.show()
 
+def par_plot_ALL(n,filename,parlist,namelist):
+        for i in n:
+            p,pdf= load(i,filename,parlist)
+            par_plot(pdf,filename,i,parlist,namelist)
 
 ##############################################################################################################3   
 
@@ -108,12 +149,15 @@ if __name__ == "__main__":
     X[X==0]=10e-7
     Y=meq.y_data
 
-    print(Y['sg1'])
+    #print(Y['sg1'])
 
 
     #print(ARA)
-    #plot_alltime(n,filename,parlist)
-    p,pdf= load('37',filename,parlist)
+    par_plot_ALL(n,filename,parlist,namelist)
+
+    n2='59'
+
+    p,pdf= load(n2,filename,parlist)
 
     p1=pdf.iloc[0]
     for sgi,sg in enumerate(['sg1','sg1t4','sg2','sg3','sg4','sg4t4','sg5','sg6']):
@@ -125,10 +169,14 @@ if __name__ == "__main__":
           plt.plot(X,d1)      
       plt.plot(X,Y[sg],'o')
 
+    plt.savefig(filename+"/plot/"+n2+'_fit_plot.pdf', bbox_inches='tight')
 
-    plt.show()
+    #plot_alltime(n,filename,parlist)
+
+
+    #plt.show()
     #print(pdf)
-
+ 
 
 
   
