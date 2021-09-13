@@ -7,7 +7,7 @@ import pandas as pd
 
 
 initdist=1000#40.
-finaldist=0.5#2.5
+finaldist=0.1#2.5
 priot_label=None
  
 
@@ -75,7 +75,7 @@ def model(x,max_input, p):
     node2_sg3 = (max_input['sg3'])/(1+np.power(node1/10**p['log_k_3'],p['n_sg'])) 
     node2_sg4 = (max_input['sg4'])/(1+np.power(node1/10**p['log_k_4'],p['n_sg'])) 
     node2_sg4t4 = (max_input['sg4t4'])/(1+np.power(node1/10**p['log_k_4t4'],p['n_sg'])) 
-    node2_sg5 = (max_input['sg5']-)/(1+np.power(node1/10**p['log_k_5'],p['n_sg'])) 
+    node2_sg5 = (max_input['sg5'])/(1+np.power(node1/10**p['log_k_5'],p['n_sg'])) 
     node2_sg6 = (max_input['sg6'])/(1+np.power(node1/10**p['log_k_6'],p['n_sg'])) 
     
     return node2_sg1,node2_sg1t4,node2_sg2,node2_sg3,node2_sg4,node2_sg4t4,node2_sg5,node2_sg6

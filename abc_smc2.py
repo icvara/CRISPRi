@@ -15,8 +15,8 @@ import time
 
 
 
-version="ALL_together_1"
-pl= 47 #prior_label=
+version="ALL_together_2"
+pl= 23 #prior_label=
 sys.path.insert(0, '/users/ibarbier/CRISPRi/'+version+'/')
 #sys.path.insert(0, 'C:/Users/Administrator/Desktop/Modeling/CRISPRi/'+version)
 import model_equation

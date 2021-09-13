@@ -15,15 +15,15 @@ import time
 
 
 
-filename="ALL_together_1"
+filename="ALL_together_2"
 n=['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29']#,
 #n=['17','18','19','20','21','22','23','24']#,'25','26','27','28','29']
   #  '30','31','32','33','34','35','36','37']
 #n=['1','10','20','30','37']
-n=['59']
+n=['55']
 #
 sys.path.insert(0, '/users/ibarbier/CRISPRi/'+filename)
-sys.path.insert(0, 'C:/Users/Administrator/Desktop/Modeling/CRISPRi/'+filename)
+#sys.path.insert(0, 'C:/Users/Administrator/Desktop/Modeling/CRISPRi/'+filename)
 import model_equation as meq
   
 parlist=meq.parlist
@@ -146,17 +146,32 @@ def plot_parvsmodel(p,filename,name):
             print(meq.max_input)
             for sgi,sg in enumerate(['sg1','sg1t4','sg2','sg3','sg4','sg4t4','sg5','sg6']):
               plt.subplot(2,4,sgi+1)
-              plt.tight_layout()
-              plt.xscale("log")
+
               for pi,par in enumerate(p):
                   par=pdf.iloc[pi]
                  # d1,d1t4,d2,d3,d4,d4t4,d5,d6 = meq.model(X2,meq.max_input,par)
                   plt.plot(X2,meq.model(X2,meq.max_input,par)[sgi])  
               plt.title(sg)    
               plt.plot(X,Y[sg],'o')
+              plt.tight_layout()
+              plt.xscale("log")
 
             plt.savefig(filename+"/plot/"+name+'_fit_plot.pdf')# bbox_inches='tight')
-
+            plt.close()
+            
+def getStat(pdf):
+    mean=np.mean(pdf)
+    sd=np.std(pdf)
+    mode=[]
+    for par in pdf:
+        m=statistics.mode(pdf[par])
+        mode.append(m)
+    parl = namelist.copy()
+    parl.append('dist')
+    data = {'mean': mean.tolist(), 'sd': sd.tolist(), 'mode':mode} 
+    stats=pd.DataFrame(data,index=parl)
+    
+    return stats
 ##############################################################################################################3   
 
 if __name__ == "__main__":
@@ -166,43 +181,25 @@ if __name__ == "__main__":
     
 
 
-    #print(Y['sg1'])
+    n=['55']
+    #par_plot_ALL(n,filename,parlist,namelist) 
+    p,pdf= load('55',filename,parlist)
 
 
-    #print(ARA)
-    #par_plot_ALL(n,filename,parlist,namelist)
-
-    n2='59'
-
-    p,pdf= load(n2,filename,parlist)
-    mean=np.mean(pdf)
-    sd=np.std(pdf)
-    mode=[]
-    for par in pdf:
-        m=statistics.mode(pdf[par])
-        mode.append(m)
-
-  #  plot_parvsmodel(p,filename,n2)
-
-    p1=pdf.iloc[0]
-    parl = namelist.copy()
-    parl.append('dist')
-    data = {'mean': mean.tolist(), 'sd': sd.tolist(), 'mode':mode}
- 
-
-    stats=pd.DataFrame(data,index=parl)
     
 
 
-    print(stats)
+    print(getStat(pdf))
+
+
+
+    p1=pdf.iloc[0]
+    print(p1)
+
 
  
-   # plot_parvsmodel([p1],filename,"30_best")
-
-
-    #print(p1)
-
-    #plot_parvsmodel([p1],filename,"59_best")
+    plot_parvsmodel([p1],filename,"55_best")
+    plot_parvsmodel(p,filename,"55")
 
 
 
@@ -210,10 +207,6 @@ if __name__ == "__main__":
 
     #plot_alltime(n,filename,parlist)
 
-
-    #plt.show()
-    #print(pdf)
- 
 
 
   
