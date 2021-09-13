@@ -12,7 +12,7 @@ from scipy.signal import argrelextrema
 from matplotlib.colors import LogNorm, Normalize
 import multiprocessing
 import time
-from functools import partial
+
 
 
 filename="ALL_together_1"
@@ -23,7 +23,7 @@ n=['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','
 n=['59']
 #
 sys.path.insert(0, '/users/ibarbier/CRISPRi/'+filename)
-#sys.path.insert(0, 'C:/Users/Administrator/Desktop/Modeling/CRISPRi/'+filename)
+sys.path.insert(0, 'C:/Users/Administrator/Desktop/Modeling/CRISPRi/'+filename)
 import model_equation as meq
   
 parlist=meq.parlist
@@ -138,6 +138,25 @@ def par_plot_ALL(n,filename,parlist,namelist):
             p,pdf= load(i,filename,parlist)
             par_plot(pdf,filename,i,parlist,namelist)
 
+def plot_parvsmodel(p,filename,name):
+            X=meq.x_data
+            X[X==0]=10e-10
+            X2=np.logspace(-10,2,200,base=10)
+            Y=meq.y_data
+            print(meq.max_input)
+            for sgi,sg in enumerate(['sg1','sg1t4','sg2','sg3','sg4','sg4t4','sg5','sg6']):
+              plt.subplot(2,4,sgi+1)
+              plt.tight_layout()
+              plt.xscale("log")
+              for pi,par in enumerate(p):
+                  par=pdf.iloc[pi]
+                 # d1,d1t4,d2,d3,d4,d4t4,d5,d6 = meq.model(X2,meq.max_input,par)
+                  plt.plot(X2,meq.model(X2,meq.max_input,par)[sgi])  
+              plt.title(sg)    
+              plt.plot(X,Y[sg],'o')
+
+            plt.savefig(filename+"/plot/"+name+'_fit_plot.pdf')# bbox_inches='tight')
+
 ##############################################################################################################3   
 
 if __name__ == "__main__":
@@ -145,31 +164,49 @@ if __name__ == "__main__":
     if os.path.isdir(filename+'/plot') is False: ## if 'smc' folder does not exist:
         os.mkdir(filename+'/plot') ## create it, the output will go there
     
-    X=meq.x_data
-    X[X==0]=10e-7
-    Y=meq.y_data
+
 
     #print(Y['sg1'])
 
 
     #print(ARA)
-    par_plot_ALL(n,filename,parlist,namelist)
+    #par_plot_ALL(n,filename,parlist,namelist)
 
     n2='59'
 
     p,pdf= load(n2,filename,parlist)
+    mean=np.mean(pdf)
+    sd=np.std(pdf)
+    mode=[]
+    for par in pdf:
+        m=statistics.mode(pdf[par])
+        mode.append(m)
+
+  #  plot_parvsmodel(p,filename,n2)
 
     p1=pdf.iloc[0]
-    for sgi,sg in enumerate(['sg1','sg1t4','sg2','sg3','sg4','sg4t4','sg5','sg6']):
-      plt.subplot(2,4,sgi+1)
-      plt.xscale("log")
-      for pi,par in enumerate(p):
-          par=pdf.iloc[pi]
-          d1,d1t4,d2,d3,d4,d4t4,d5,d6 = meq.model(X,meq.max_input,par)
-          plt.plot(X,d1)      
-      plt.plot(X,Y[sg],'o')
+    parl = namelist.copy()
+    parl.append('dist')
+    data = {'mean': mean.tolist(), 'sd': sd.tolist(), 'mode':mode}
+ 
 
-    plt.savefig(filename+"/plot/"+n2+'_fit_plot.pdf', bbox_inches='tight')
+    stats=pd.DataFrame(data,index=parl)
+    
+
+
+    print(stats)
+
+ 
+   # plot_parvsmodel([p1],filename,"30_best")
+
+
+    #print(p1)
+
+    #plot_parvsmodel([p1],filename,"59_best")
+
+
+
+
 
     #plot_alltime(n,filename,parlist)
 
