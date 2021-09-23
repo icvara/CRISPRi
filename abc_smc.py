@@ -21,6 +21,8 @@ y_data_max= 537009.92 #from control without sgRNA
 y_data = y_data/y_data_max #fix the max to 1
 '''
 
+version="2"
+
 def Get_data(df,s):
     sub_df=df[df['sample']==s]
     max_input= sub_df['GFP'][df['arabinose']=='off-target'].tolist()[0]
@@ -41,15 +43,16 @@ def pars_to_dict(pars):
 
 parlist = [ # list containing information of each parameter
    # {'name' : 'F0', 'lower_limit':0.5,'upper_limit':1.5},# fluorescence in absence of repressor
-    {'name' : 'Finf','lower_limit':0.0,'upper_limit':0.3},# fluorescence in abundance of repressor
-    {'name' : 'log_xc','lower_limit':-1.5,'upper_limit':0},# characeristic concentration of the repressor
-    {'name' : 'n','lower_limit':1.0,'upper_limit':3.5},# Hill exponent
+   # {'name' : 'Finf','lower_limit':0.0,'upper_limit':0.3},# fluorescence in abundance of repressor
+    {'name' : 'beta/alpha_2', 'lower_limit':0.0,'upper_limit':4.0},
+    {'name' : 'k2','lower_limit':-1.5,'upper_limit':0},# characeristic concentration of the repressor
+    {'name' : 'n2','lower_limit':1.0,'upper_limit':3.5},# Hill exponent
 
     #first node which is activate by ara(x) and repress the GFP
-    {'name' : 'L1', 'lower_limit':0.0,'upper_limit':0.1},# fluorescence in abundance of inducer
-    {'name' : 'B1','lower_limit':0.5,'upper_limit':1.5},# fluorescence in absence of inducer
-    {'name' : 'log_k1','lower_limit':-5,'upper_limit':-3.5},# characeristic concentration of the activation
+    {'name' : 'beta/alpha_1', 'lower_limit':0.0,'upper_limit':4.0},
+    {'name' : 'k1','lower_limit':-5.,'upper_limit':-3.5},# characeristic concentration of the activation
     {'name' : 'n1','lower_limit':1.0,'upper_limit':3.5}# Hill exponent
+    
 ]
 
 def sampleprior():
@@ -77,9 +80,9 @@ def model(x, max_input, pars, listTodict=False):
 ### and a set of concentrations x of signal/inducer, it returns the predicted response
 ### For instance for a repressive hill function:  
     p = pars_to_dict(pars)
-    node1 = p['L1'] + np.power((p['B1']-p['L1'])*x,p['n1'])/(np.power(10**p['log_k1'],p['n1'])+np.power(x,p['n1']))
+    node1= 1 + (10**p['beta/alpha_1']-1)*np.power(x,p['n1'])/(np.power(10**p['k1'],p['n1'])+np.power(x,p['n1']))
     #return p['Finf']+(p['F0']-p['Finf'])/(1+np.power(node1/10**p['log_xc'],p['n']))
-    return p['Finf']+(max_input-p['Finf'])/(1+np.power(node1/10**p['log_xc'],p['n'])) 
+    return 10**p['beta/alpha_2']/(1+np.power(node1/10**p['k2'],p['n2'])) 
 
 def distance(pars, x_data, y_data, max_input): #### 
 ### This function defines the distance between the data and the model for a given set of parameters
@@ -205,7 +208,7 @@ def GeneratePars(x_data, y_data, max_input, ncpus,
 #final_dist =100
 def Sequential_ABC(x_data, y_data, max_input, sample, ncpus,
                    initial_dist = 10000, final_dist =0.003, Npars = 1000, prior_label = None,
-                   adaptative_kernel = True):
+                   adaptative_kernel = False):
 
 ## Sequence of acceptance threshold start with initial_dis and keeps on reducing until
 ## a final threshold final_dist is reached.
@@ -223,9 +226,9 @@ def Sequential_ABC(x_data, y_data, max_input, sample, ncpus,
         weights = None
         idistance = 0
     else: # a file with the label is used to load the posterior, use always numerical (not 'final')
-        pars = np.loadtxt('smc_'+sample+'/pars_{}_{}_{}_{}.out'.format(model,sto,gamma,prior_label))
-        weights = np.loadtxt('smc_'+sample+'/weights_{}_{}_{}_{}.out'.format(model,sto,gamma,prior_label))
-        accepted_distances = np.loadtxt('smc_'+sample+'/distances_{}_{}_{}_{}.out'.format(model,sto,gamma,prior_label))
+        pars = np.loadtxt('smc_'+version+'_'+sample+'/pars_{}_{}_{}_{}.out'.format(model,sto,gamma,prior_label))
+        weights = np.loadtxt('smc_'+version+'_'+sample+'/weights_{}_{}_{}_{}.out'.format(model,sto,gamma,prior_label))
+        accepted_distances = np.loadtxt('smc_'+version+'_'+sample+'/distances_{}_{}_{}_{}.out'.format(model,sto,gamma,prior_label))
         distance = np.median(accepted_distances)
         idistance = prior_label
 
@@ -254,9 +257,9 @@ def Sequential_ABC(x_data, y_data, max_input, sample, ncpus,
             last_round = True
         else:
             distance = proposed_dist
-        np.savetxt('smc_'+sample+'/pars_{}.out'.format(label), pars)
-        np.savetxt('smc_'+sample+'/weights_{}.out'.format(label), weights)
-        np.savetxt('smc_'+sample+'/distances_{}.out'.format(label), accepted_distances)
+        np.savetxt('smc_'+version+'_'+sample+'/pars_{}.out'.format(label), pars)
+        np.savetxt('smc_'+version+'_'+sample+'/weights_{}.out'.format(label), weights)
+        np.savetxt('smc_'+version+'_'+sample+'/distances_{}.out'.format(label), accepted_distances)
 
         if acceptance < 0.1 and kernelfactor>0.1 and adaptative_kernel:
             kernelfactor = kernelfactor * 0.7
@@ -280,8 +283,8 @@ Usage:""", __file__ ,"""sg1 12""")
     ncpus  = int(sys.argv[2])
     print("Passed options: sample = ", sample, " and ncpus = ", ncpus)
 
-    if os.path.isdir('smc_'+sample) is False: ## if 'smc' folder does not exist:
-        os.mkdir('smc_'+sample) ## create it, the output will go there
+    if os.path.isdir('smc_'+version+'_'+sample) is False: ## if 'smc' folder does not exist:
+        os.mkdir('smc_'+version+'_'+sample) ## create it, the output will go there
 
     x_data = np.array([])
     y_data = np.array([])
