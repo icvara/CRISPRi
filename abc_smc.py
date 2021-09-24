@@ -46,12 +46,12 @@ parlist = [ # list containing information of each parameter
    # {'name' : 'Finf','lower_limit':0.0,'upper_limit':0.3},# fluorescence in abundance of repressor
     {'name' : 'beta/alpha_2', 'lower_limit':0.0,'upper_limit':4.0},
     {'name' : 'k2','lower_limit':-1.5,'upper_limit':0},# characeristic concentration of the repressor
-    {'name' : 'n2','lower_limit':1.0,'upper_limit':3.5},# Hill exponent
+    {'name' : 'n2','lower_limit':0.1,'upper_limit':4.},# Hill exponent
 
     #first node which is activate by ara(x) and repress the GFP
     {'name' : 'beta/alpha_1', 'lower_limit':0.0,'upper_limit':4.0},
     {'name' : 'k1','lower_limit':-5.,'upper_limit':-3.5},# characeristic concentration of the activation
-    {'name' : 'n1','lower_limit':1.0,'upper_limit':3.5}# Hill exponent
+    {'name' : 'n1','lower_limit':0.1,'upper_limit':4.}# Hill exponent
     
 ]
 
@@ -207,7 +207,7 @@ def GeneratePars(x_data, y_data, max_input, ncpus,
 
 #final_dist =100
 def Sequential_ABC(x_data, y_data, max_input, sample, ncpus,
-                   initial_dist = 10000, final_dist =0.003, Npars = 1000, prior_label = None,
+                   initial_dist = 10000, final_dist =0.0035, Npars = 1000, prior_label = None,
                    adaptative_kernel = False):
 
 ## Sequence of acceptance threshold start with initial_dis and keeps on reducing until

@@ -12,19 +12,20 @@ from scipy.signal import argrelextrema
 from matplotlib.colors import LogNorm, Normalize
 import multiprocessing
 import time
+import abc_smc as meq
 
 
 
-filename="ALL_together_2"
-n=['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29']#,
-#n=['17','18','19','20','21','22','23','24']#,'25','26','27','28','29']
-  #  '30','31','32','33','34','35','36','37']
-#n=['1','10','20','30','37']
-n=['55']
+filename="smc_2"
+sg= ['sg1','sg1t4','sg2','sg3','sg4','sg4t4','sg5']#,'sg6']
+n=['final']
 #
-sys.path.insert(0, '/users/ibarbier/CRISPRi/'+filename)
+#sys.path.insert(0, '/users/ibarbier/CRISPRi/'+filename)
 #sys.path.insert(0, 'C:/Users/Administrator/Desktop/Modeling/CRISPRi/'+filename)
-import model_equation as meq
+#import model_equation as meq
+path='C:/Users/Administrator/Desktop/Modeling/CRISPRi/data/data.txt'
+dataframe = pd.read_csv(path,sep='\t')
+dataframe['arabinose']=dataframe['arabinose'].astype(str)
   
 parlist=meq.parlist
 namelist=[]
@@ -40,8 +41,10 @@ def load(number= n,filename=filename,parlist=parlist):
     for i,par in enumerate(parlist):
         namelist.append(parlist[i]['name'])
         
-    path = filename+'/smc/pars_' + number + '.out'
-    dist_path = filename+'/smc/distances_' + number + '.out'
+    #path = filename+'/smc/pars_' + number + '.out'
+    #dist_path = filename+'/smc/distances_' + number + '.out'
+    path = filename+'/pars_' + number + '.out'
+    dist_path = filename+'/distances_' + number + '.out'
 
     raw_output= np.loadtxt(path)
     dist_output= np.loadtxt(dist_path)
@@ -133,6 +136,49 @@ def par_plot(df,name,nb,parlist,namelist):
     plt.close()
     #plt.show()
 
+
+def combined_par_plot(name,parlist,namelist):
+    #plt.plot(df['K_ARAX'],df['K_ARAY'],'ro')
+    fonts=4
+    colors=['red','green','blue','darkcyan','orange','coral','seagreen','peru']
+    for i,par1 in enumerate(namelist):
+        for j,par2 in enumerate(namelist):
+            plt.subplot(len(namelist),len(namelist), i+j*len(namelist)+1)
+            for k,sgi in enumerate(sg):
+                file= 'smc_2/'+filename +'_'+ sgi
+                p,df= load(n,file,parlist)
+                if i == j :
+                    sns.kdeplot(df[par1],bw_adjust=.8 ,linewidth= 0.3,c=colors[k],label=sgi)
+                    plt.xlim((parlist[i]['lower_limit'],parlist[i]['upper_limit']))
+                    plt.ylabel("")
+                    plt.xlabel("")
+
+                else:
+                    plt.scatter(df[par1],df[par2], s=0.001, c=colors[k])# cmap='viridis')# vmin=mindist, vmax=maxdist)
+                    plt.xlim((parlist[i]['lower_limit'],parlist[i]['upper_limit']))
+                    plt.ylim((parlist[j]['lower_limit'],parlist[j]['upper_limit']))
+                if i > 0 and j < len(namelist)-1 :
+                    plt.xticks([])
+                    plt.yticks([])
+                else:
+                    if i==0 and j!=len(namelist)-1:
+                        plt.xticks([])
+                        plt.ylabel(par2,fontsize=fonts)
+                        plt.yticks(fontsize=fonts,rotation=90)
+                    if j==len(namelist)-1 and i != 0:
+                        plt.yticks([])
+                        plt.xlabel(par1,fontsize=fonts)
+                        plt.xticks(fontsize=fonts)             
+                    else:
+                        plt.ylabel(par2,fontsize=fonts)
+                        plt.xlabel(par1,fontsize=fonts)
+                        plt.xticks(fontsize=fonts)
+                        plt.yticks(fontsize=4,rotation=90) 
+    plt.savefig(name+"/plot/"+'comparepar_plot.pdf', bbox_inches='tight')
+    plt.close()
+    #plt.show()
+
+
 def par_plot_ALL(n,filename,parlist,namelist):
         for i in n:
             p,pdf= load(i,filename,parlist)
@@ -172,6 +218,20 @@ def getStat(pdf):
     stats=pd.DataFrame(data,index=parl)
     
     return stats
+
+ 
+def plot_fitvsdata(X,Y,max_input,pdf,name,nb):
+    X[X==0]=10e-10
+    X2=np.logspace(-10,0,100,base=10)
+    for j in np.arange(0,1000):
+        plt.plot(X2,meq.model(X2,max_input,pdf.iloc[j]),'-')  
+    plt.plot(X,Y,'or')  
+    plt.title(nb)
+    plt.xscale("log")
+    plt.savefig(name+"/plot/"+nb+'_fitvsdata.pdf', bbox_inches='tight')
+    plt.close()
+    #plt.show()
+
 ##############################################################################################################3   
 
 if __name__ == "__main__":
@@ -181,36 +241,20 @@ if __name__ == "__main__":
     
 
 
-    n=['55']
-    #par_plot_ALL(n,filename,parlist,namelist) 
-    p,pdf= load('55',filename,parlist)
+    n='final'
+    i=0
+    combined_par_plot(filename,parlist,namelist)
+    '''
+    for sgi in sg:
+        file= 'smc_2/'+filename +'_'+ sgi
+        p,pdf= load(n,file,parlist)
+        x_data,y_data, max_input= meq.Get_data(dataframe,sgi)
 
+        par_plot(pdf,filename,sgi,parlist,namelist)
+        plot_fitvsdata(x_data,y_data,max_input,pdf,filename,sgi)
+    '''
 
-    
-
-
-    print(getStat(pdf))
-
-
-
-    p1=pdf.iloc[0]
-    print(p1)
-
-
- 
-    plot_parvsmodel([p1],filename,"55_best")
-    plot_parvsmodel(p,filename,"55")
-
-
-
-
-
-    #plot_alltime(n,filename,parlist)
 
 
 
   
- 
-
-    
-    
