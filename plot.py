@@ -17,7 +17,8 @@ import abc_smc as meq
 
 
 filename="smc_2"
-sg= ['sg1','sg1t4','sg2','sg3','sg4','sg4t4','sg5']#,'sg6']
+sg= ['sg1','sg1t4','sg2','sg3','sg4','sg4t4','sg5','sg6']
+sg=['sg1']
 n=['final']
 #
 #sys.path.insert(0, '/users/ibarbier/CRISPRi/'+filename)
@@ -101,10 +102,9 @@ def plot_alltime(n,filename,parlist):
     plt.close()
 
 
-def par_plot(df,name,nb,parlist,namelist):
+def par_plot(df,name,file,nb,parlist,namelist):
     #plt.plot(df['K_ARAX'],df['K_ARAY'],'ro')
-    fonts=2
- 
+    fonts=8
     for i,par1 in enumerate(namelist):
         for j,par2 in enumerate(namelist):
             plt.subplot(len(namelist),len(namelist), i+j*len(namelist)+1)
@@ -112,10 +112,11 @@ def par_plot(df,name,nb,parlist,namelist):
                 plt.hist(df[par1])
                 plt.xlim((parlist[i]['lower_limit'],parlist[i]['upper_limit']))
             else:
-                plt.scatter(df[par1],df[par2], c=df['dist'], s=0.001, cmap='viridis')# vmin=mindist, vmax=maxdist)
+                plt.scatter(df[par1],df[par2], c=df['dist'], s=0.1, cmap='viridis')# vmin=mindist, vmax=maxdist)
                 plt.xlim((parlist[i]['lower_limit'],parlist[i]['upper_limit']))
                 plt.ylim((parlist[j]['lower_limit'],parlist[j]['upper_limit']))
-            if i > 0 and j < len(namelist)-1 :
+
+            if i > 0 and j < len(namelist)-1:
                 plt.xticks([])
                 plt.yticks([])
             else:
@@ -127,12 +128,16 @@ def par_plot(df,name,nb,parlist,namelist):
                     plt.yticks([])
                     plt.xlabel(par1,fontsize=fonts)
                     plt.xticks(fontsize=fonts)
-                else:
+                
+                if i==0 and j==len(namelist)-1:
                     plt.ylabel(par2,fontsize=fonts)
                     plt.xlabel(par1,fontsize=fonts)
                     plt.xticks(fontsize=fonts)
-                    plt.yticks(fontsize=4,rotation=90)                 
-    plt.savefig(name+"/plot/"+nb+'_par_plot.pdf', bbox_inches='tight')
+                    plt.yticks(fontsize=fonts,rotation=90) 
+                
+   # plt.savefig(name+"/plot/"+file+'_'+nb+'_par_plot.pdf', bbox_inches='tight')
+    plt.savefig(name+"/plot/"+file+'_'+nb+'_par_plot.png', bbox_inches='tight')
+
     plt.close()
     #plt.show()
 
@@ -174,7 +179,7 @@ def combined_par_plot(name,parlist,namelist):
                         plt.xlabel(par1,fontsize=fonts)
                         plt.xticks(fontsize=fonts)
                         plt.yticks(fontsize=4,rotation=90) 
-    plt.savefig(name+"/plot/"+'comparepar_plot.pdf', bbox_inches='tight')
+    plt.savefig(name+"/plot/"+'comparepar2_plot.pdf', bbox_inches='tight')
     plt.close()
     #plt.show()
 
@@ -220,7 +225,7 @@ def getStat(pdf):
     return stats
 
  
-def plot_fitvsdata(X,Y,max_input,pdf,name,nb):
+def plot_fitvsdata(X,Y,max_input,pdf,name,file,nb):
     X[X==0]=10e-10
     X2=np.logspace(-10,0,100,base=10)
     for j in np.arange(0,1000):
@@ -228,7 +233,9 @@ def plot_fitvsdata(X,Y,max_input,pdf,name,nb):
     plt.plot(X,Y,'or')  
     plt.title(nb)
     plt.xscale("log")
-    plt.savefig(name+"/plot/"+nb+'_fitvsdata.pdf', bbox_inches='tight')
+    #plt.savefig(name+"/plot/"+file+'_'+nb+'_fitvsdata.pdf', bbox_inches='tight')
+    plt.savefig(name+"/plot/"+file+'_'+nb+'_fitvsdata.png', bbox_inches='tight')
+
     plt.close()
     #plt.show()
 
@@ -241,18 +248,19 @@ if __name__ == "__main__":
     
 
 
-    n='final'
-    i=0
-    combined_par_plot(filename,parlist,namelist)
-    '''
-    for sgi in sg:
-        file= 'smc_2/'+filename +'_'+ sgi
-        p,pdf= load(n,file,parlist)
-        x_data,y_data, max_input= meq.Get_data(dataframe,sgi)
+    n='1'
+    
+    for n in ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','final']:
+    #combined_par_plot(filename,parlist,namelist)
+    
+        for sgi in sg:
+            file= 'smc_2/'+filename +'_'+ sgi
+            p,pdf= load(n,file,parlist)
+            x_data,y_data, max_input= meq.Get_data(dataframe,sgi)
 
-        par_plot(pdf,filename,sgi,parlist,namelist)
-        plot_fitvsdata(x_data,y_data,max_input,pdf,filename,sgi)
-    '''
+            par_plot(pdf,filename,sgi,n,parlist,namelist)
+            plot_fitvsdata(x_data,y_data,max_input,pdf,filename,sgi,n)
+    
 
 
 
